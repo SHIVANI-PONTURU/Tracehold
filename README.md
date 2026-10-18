@@ -92,7 +92,7 @@ You need a Linux server with 4 CPUs, 16 GB memory and 40 GB disk (Ubuntu 26.04 w
 
 ```bash
 # on the server, as a normal user with sudo rights (not root), in your home folder
-git clone <this repository's URL> TraceHold && cd TraceHold
+git clone https://github.com/SHIVANI-PONTURU/Tracehold.git TraceHold && cd TraceHold
 cp .env.example .env              # add your BEDROCK_API_KEY, LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY
 # copy HI-Small_Trans.csv, HI-Small_accounts.csv and HI-Small_Patterns.txt into this folder
 bash deploy/ec2_setup.sh          # installs Podman, OpenShell, Python and Node, builds the agent image and the web app
