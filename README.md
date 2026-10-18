@@ -132,4 +132,5 @@ Claude Code (Anthropic's AI coding assistant) helped write the code. The agents 
 - [docs/QUERIES.md](docs/QUERIES.md): Every Cypher query and why it exists
 - [docs/SANDBOX.md](docs/SANDBOX.md): What each sandbox may reach
 - [docs/CONTRACT.md](docs/CONTRACT.md): The tools and handoffs
-- Read the Blog post at [TraceHold: Preventing Fraudsters from Escaping Justice](https://medium.com/@tracehold.1/tracehold-preventing-fraudsters-from-escaping-justice-7a03c50bc1eb)
+- Read the Blog post at [TraceHold: Preventing Fraudsters from Escaping Justice](https://medium.com/@shivaniponturu/freeze-the-stolen-money-not-the-whole-account-6840c6656db1)
+- YouTube Demo Video at [Tracehold](link-goes-here)
