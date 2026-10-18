@@ -87,7 +87,7 @@ def _check_claude(m):
     """A tool call (auto) and a structured answer from Claude."""
     from agents.common import anthropic_api as A
     from agents.common import model as M
-    api = A.Claude(m)
+    api = A.Claude(m, fallback=False)               # check exactly this model, never its fallback
     t0, usd, tokens = time.time(), 0.0, [0, 0]
     tool = {"name": "RecordBranch", "description": RecordBranch.__doc__,
             "input_schema": A.strict_schema(RecordBranch.model_json_schema())}
@@ -125,9 +125,9 @@ class _Ledger:
     def check(self):
         pass
 
-    def record(self, usage, model_id):
+    def record(self, usage, model_id, prices=None):
         from agents.common import model as M
-        usd = M.price(usage, self.m["price_usd_per_million"])
+        usd = M.price(usage, prices or self.m["price_usd_per_million"])
         _record(model_id, usage, usd)
         self.usd += usd
         self.tokens[0] += int(usage.get("input_tokens", 0))

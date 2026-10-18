@@ -13,12 +13,15 @@ from __future__ import annotations
 
 import copy
 import json
+import logging
 import os
 import random
 import time
 from urllib.parse import quote
 
 import httpx2
+
+log = logging.getLogger(__name__)
 
 VERSION = "2023-06-01"
 RETRY_STATUS = {408, 409, 429, 500, 502, 503, 504, 529}
@@ -33,6 +36,16 @@ class APIError(RuntimeError):
     def __init__(self, status, kind, message):
         super().__init__(f"{status} {kind}: {message}")
         self.status_code, self.kind, self.message = status, kind, message
+
+
+class QuotaExhausted(APIError):
+    """A route's daily token quota is used up (Bedrock: 429 "Too many tokens per day"). Retrying the same route is
+    pointless until the quota resets, so the client moves to the model's fallback route instead, if it has one."""
+
+
+def daily_quota(status, message):
+    text = (message or "").lower()
+    return status == 429 and ("per day" in text or "daily" in text)
 
 
 def strict_schema(schema):
@@ -176,32 +189,64 @@ class Claude:
                                   Platform page) or SigV4 with AWS access keys (service aws-external-anthropic).
     provider "bedrock_anthropic": Amazon Bedrock, POST {bedrock-runtime}/model/{model}/invoke with the same Messages
                                   body (anthropic_version instead of model), Bearer Bedrock API key or SigV4 (bedrock).
+
+    A model with a `fallback` (agents/config.yaml, for example the US Bedrock route of Opus 4.6 falling back to its
+    global route) moves to that route when its own daily token quota is used up, and tries its own route again after
+    `fallback_retry_s` (default an hour). `last_route` is the settings of the route that answered the last call, so the
+    spend ledger records and prices the route that was really used.
     """
 
-    def __init__(self, m, api_key=None):
+    def __init__(self, m, api_key=None, fallback=True):
         if m["provider"] not in PROVIDERS:
             raise ValueError(f"not a Claude provider: {m['provider']}")
         self.m = m
+        self.api_key = api_key
         self.auth = ("key", api_key) if api_key else credentials(m)
         self.http = httpx2.Client(timeout=httpx2.Timeout(30, read=m["timeout_s"]))
+        self.routes = [m]
+        if fallback and m.get("fallback"):
+            from agents.common.config import resolve_model
+            fb = resolve_model(m, m["fallback"])
+            if fb["provider"] not in PROVIDERS:
+                raise ValueError(f"the fallback of {m['id']} is not a Claude model: {fb['id']}")
+            self.routes.append(fb)
+        self.blocked_until = {}                               # route id -> time its daily quota may have reset
+        self.last_route = m
 
     @property
     def model_id(self):
         return self.m.get("model_id") or self.m["id"]
 
-    def url(self):
-        m = self.m
+    def url(self, m=None):
+        m = m or self.m
         if m["provider"] == "bedrock_anthropic":
-            return f"{m['base_url'].rstrip('/')}/model/{quote(self.model_id, safe='')}/invoke"
+            return f"{m['base_url'].rstrip('/')}/model/{quote(m.get('model_id') or m['id'], safe='')}/invoke"
         return f"{m['base_url'].rstrip('/')}/v1/messages"
 
     def create(self, system, messages, *, tools=None, tool_choice=None, schema=None):
-        m = self.m
+        now = time.time()
+        routes = [r for r in self.routes if self.blocked_until.get(r["id"], 0) <= now] or self.routes[-1:]
+        for i, m in enumerate(routes):
+            body = self._body(m, system, messages, tools, tool_choice, schema)
+            try:
+                resp = self._post(body, m)
+            except QuotaExhausted:
+                if i + 1 == len(routes):
+                    raise
+                wait = float(self.m.get("fallback_retry_s") or 3600)
+                self.blocked_until[m["id"]] = time.time() + wait
+                log.warning("daily token quota used up on %s; using %s, and %s again in %d minutes",
+                            m["id"], routes[i + 1]["id"], m["id"], wait // 60)
+                continue
+            self.last_route = m
+            return resp
+
+    def _body(self, m, system, messages, tools, tool_choice, schema):
         body = {"max_tokens": int(m["max_output_tokens"]), "messages": messages}
         if m["provider"] == "bedrock_anthropic":
             body["anthropic_version"] = "bedrock-2023-05-31"
         else:
-            body["model"] = self.model_id
+            body["model"] = m.get("model_id") or m["id"]
         if system:
             body["system"] = system
         if m.get("thinking"):
@@ -216,18 +261,19 @@ class Claude:
         if tools:
             body["tools"] = tools
             body["tool_choice"] = tool_choice or {"type": "auto"}
-        return self._post(body)
+        return body
 
-    def _headers(self, url, raw):
-        m = self.m
+    def _headers(self, url, raw, m=None):
+        m = m or self.m
+        auth = self.auth if m is self.m else (("key", self.api_key) if self.api_key else credentials(m))
         h = {"content-type": "application/json", "accept": "application/json"}
         if m["provider"] != "bedrock_anthropic":
             h["anthropic-version"] = VERSION
         if m["provider"] == "anthropic_aws":
             h["anthropic-workspace-id"] = os.environ.get(m.get("workspace_env") or "ANTHROPIC_AWS_WORKSPACE_ID", "")
-        if self.auth is None:
+        if auth is None:
             raise APIError(0, "no_credentials", missing(m) or "no key")
-        kind, cred = self.auth
+        kind, cred = auth
         if kind == "key":
             if m["provider"] == "bedrock_anthropic":
                 h["authorization"] = f"Bearer {cred}"
@@ -241,12 +287,13 @@ class Claude:
                             region=m.get("region") or "us-east-2", service=service))
         return h
 
-    def _post(self, body):
-        url = self.url()
+    def _post(self, body, m=None):
+        m = m or self.m
+        url = self.url(m)
         raw = json.dumps(body, separators=(",", ":")).encode("utf-8")
-        retries = int(self.m.get("max_retries", 6))
+        retries = int(m.get("max_retries", 6))
         for attempt in range(retries + 1):
-            headers = self._headers(url, raw)                 # signed again each try (the date changes)
+            headers = self._headers(url, raw, m)              # signed again each try (the date changes)
             try:
                 r = self.http.post(url, content=raw, headers=headers)
             except (httpx2.TimeoutException, httpx2.TransportError):
@@ -263,6 +310,8 @@ class Claude:
             err = data.get("error") if isinstance(data.get("error"), dict) else {}
             kind = err.get("type") or r.headers.get("x-amzn-errortype", "error").split(":")[0]
             message = err.get("message") or data.get("message") or data.get("Message") or r.text[:300]
+            if daily_quota(r.status_code, message):         # no retry: it will not reset for hours
+                raise QuotaExhausted(r.status_code, kind, message)
             if r.status_code in RETRY_STATUS and attempt < retries:
                 wait = r.headers.get("retry-after")
                 time.sleep(min(60.0, float(wait)) if wait and wait.replace(".", "", 1).isdigit()

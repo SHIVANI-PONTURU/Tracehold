@@ -51,8 +51,8 @@ class SpendGuard:
             raise BudgetExceeded(f"model spend reached ${t['total']['usd']:.2f} of ${self.cfg['budget']['total_usd']:.2f}; "
                                  f"raise budget.total_usd in agents/config.yaml to continue")
 
-    def record(self, usage, model_id):
-        usd = price(usage, self.cfg["model"]["price_usd_per_million"])
+    def record(self, usage, model_id, prices=None):
+        usd = price(usage, prices or self.cfg["model"]["price_usd_per_million"])
         self.handoff.record_spend({
             "agent": self.agent, "investigation_id": self.inv, "model": model_id,
             "input_tokens": int(usage.get("input_tokens", 0)),
@@ -101,8 +101,9 @@ class ClaudeModel:
         with tracing.generation(name, m["id"], {"effort": m.get("effort"), "max_tokens": m["max_output_tokens"]},
                                 {"system": system, "messages": msgs}) as gen:
             resp = self.api.create(system, msgs, **kw)
+            route = getattr(self.api, "last_route", None) or m      # the fallback route, if the first was used up
             u = self.A.usage(resp)
-            usd = self.guard.record(u, m["id"])
+            usd = self.guard.record(u, route["id"], route.get("price_usd_per_million"))
             self.spent += usd
             self.tokens += int(u.get("input_tokens", 0)) + int(u.get("output_tokens", 0))
             tracing.end_generation(gen, resp.get("content"), u, usd)

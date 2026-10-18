@@ -12,7 +12,7 @@ from data import settings
 
 PATH = os.path.join(settings.ROOT, "agents", "config.yaml")
 MODEL_KEYS = ("provider", "api_key_env", "base_url_env", "reasoning_effort", "thinking", "effort",
-              "price_usd_per_million", "region", "workspace_env")
+              "price_usd_per_million", "region", "workspace_env", "fallback")
 CLAUDE_KEY_ENV = {"anthropic": "ANTHROPIC_API_KEY", "anthropic_aws": "ANTHROPIC_AWS_API_KEY",
                   "bedrock_anthropic": "BEDROCK_API_KEY"}
 

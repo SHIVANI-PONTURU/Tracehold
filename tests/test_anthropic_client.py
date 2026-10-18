@@ -18,7 +18,7 @@ from agents.common import model as M
 from agents.common.config import load
 
 SEEN = []
-STATE = {"fail_429": 0}
+STATE = {"fail_429": 0, "daily_quota": set()}         # daily_quota: Bedrock model IDs whose daily token quota is used up
 
 
 class Verdict(BaseModel):
@@ -61,6 +61,9 @@ async def messages(request):
     body = json.loads(raw)
     SEEN.append({"body": body, "key": request.headers.get("x-api-key"), "raw": raw, "path": request.url.path,
                  "version": request.headers.get("anthropic-version"), "headers": dict(request.headers)})
+    if request.path_params.get("model") in STATE["daily_quota"]:          # what Bedrock answers when the day's
+        return JSONResponse({"message": "Too many tokens per day, please wait before trying again."},   # tokens are gone
+                            status_code=429, headers={"x-amzn-errortype": "ThrottlingException:http://internal.amazon.com/"})
     if STATE["fail_429"] > 0:
         STATE["fail_429"] -= 1
         return JSONResponse({"type": "error", "error": {"type": "rate_limit_error", "message": "slow down"}},
@@ -323,7 +326,7 @@ def test_an_empty_text_block_before_a_lookup_is_not_sent_back():
         def check(self):
             pass
 
-        def record(self, usage, model_id):
+        def record(self, usage, model_id, prices=None):
             return 0.0
     lookup = StructuredTool.from_function(func=lambda account_id: '{"ok": true}', name="lookup",
                                           description="look an account up", args_schema=One)
@@ -332,3 +335,68 @@ def test_an_empty_text_block_before_a_lookup_is_not_sent_back():
     assert answer.decision == "follow" and used == 1
     echoed = sent[1][1]["content"]
     assert [b["type"] for b in echoed] == ["thinking", "tool_use"]        # thinking kept, the empty text dropped
+
+
+def _bedrock(stub, monkeypatch):
+    monkeypatch.setenv("TRACEHOLD_MODEL_ID", "bedrock/claude-opus-4-6")
+    monkeypatch.setenv("BEDROCK_RUNTIME_URL", stub)
+    monkeypatch.setenv("BEDROCK_API_KEY", "bedrock-key")
+    return load()
+
+
+US, GLOBAL = "/model/us.anthropic.claude-opus-4-6-v1/invoke", "/model/global.anthropic.claude-opus-4-6-v1/invoke"
+
+
+def test_a_used_up_daily_quota_moves_calls_to_the_global_route(stub, monkeypatch):
+    from agents.common import anthropic_api as A
+    cfg = _bedrock(stub, monkeypatch)
+    assert cfg["model"]["fallback"] == "bedrock/claude-opus-4-6-global"
+    STATE["daily_quota"] = {"us.anthropic.claude-opus-4-6-v1"}
+    try:
+        ledger = Ledger()
+        mdl = M.make_model(cfg, M.SpendGuard(cfg, ledger, "INV-0011-q1", "tracer"))
+        n, t0 = len(SEEN), time.time()
+        assert mdl.decide([("human", "go")], Verdict).score == 3
+        assert [r["path"] for r in SEEN[n:]] == [US, GLOBAL]          # one try on the US route, no back-off
+        assert time.time() - t0 < 5
+        prices = cfg["model"]["models"]["bedrock/claude-opus-4-6-global"]["price_usd_per_million"]
+        assert ledger.rows[-1]["model"] == "bedrock/claude-opus-4-6-global"
+        assert ledger.rows[-1]["usd"] == round(M.price(A.usage({"usage": USAGE}), prices), 6)
+        n = len(SEEN)                                                   # later calls go straight to the global route
+        mdl.decide([("human", "go")], Verdict)
+        assert [r["path"] for r in SEEN[n:]] == [GLOBAL]
+        STATE["daily_quota"] = set()                                    # an hour later the US route is tried again
+        mdl.api.blocked_until = {k: 0 for k in mdl.api.blocked_until}
+        n = len(SEEN)
+        mdl.decide([("human", "go")], Verdict)
+        assert [r["path"] for r in SEEN[n:]] == [US] and ledger.rows[-1]["model"] == "bedrock/claude-opus-4-6"
+    finally:
+        STATE["daily_quota"] = set()
+
+
+def test_ordinary_throttling_still_retries_the_same_route(stub, monkeypatch):
+    cfg = _bedrock(stub, monkeypatch)
+    STATE["fail_429"] = 1
+    n = len(SEEN)
+    M.make_model(cfg, M.SpendGuard(cfg, Ledger(), "INV-0011-q2", "tracer")).decide([("human", "go")], Verdict)
+    assert [r["path"] for r in SEEN[n:]] == [US, US]
+
+
+def test_both_routes_used_up_fails_at_once(stub, monkeypatch):
+    from agents.common import anthropic_api as A
+    cfg = _bedrock(stub, monkeypatch)
+    STATE["daily_quota"] = {"us.anthropic.claude-opus-4-6-v1", "global.anthropic.claude-opus-4-6-v1"}
+    try:
+        n, t0 = len(SEEN), time.time()
+        with pytest.raises(A.QuotaExhausted, match="per day"):
+            M.make_model(cfg, M.SpendGuard(cfg, Ledger(), "INV-0011-q3", "tracer")).decide([("human", "go")], Verdict)
+        assert [r["path"] for r in SEEN[n:]] == [US, GLOBAL] and time.time() - t0 < 5
+    finally:
+        STATE["daily_quota"] = set()
+
+
+def test_check_model_tests_exactly_the_named_model(stub, monkeypatch):
+    from agents.common import anthropic_api as A
+    cfg = _bedrock(stub, monkeypatch)
+    assert [r["id"] for r in A.Claude(cfg["model"], fallback=False).routes] == ["bedrock/claude-opus-4-6"]
+    assert [r["id"] for r in A.Claude(cfg["model"]).routes] == ["bedrock/claude-opus-4-6", "bedrock/claude-opus-4-6-global"]

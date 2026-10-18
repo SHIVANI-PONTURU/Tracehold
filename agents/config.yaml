@@ -29,6 +29,8 @@ model:
   max_output_tokens: 16000                    # hard cap per call, thinking included
   timeout_s: 300
   max_retries: 6                              # rate limits (429), overload (529) and server errors, with backoff
+  fallback_retry_s: 3600                      # after a model's daily quota sent calls to its fallback, try it again
+                                              # after this many seconds
   models:
     aws/claude-opus-5-5:                      # Claude Platform on AWS (needs the sign-up and its own key)
       provider: anthropic_aws
@@ -61,6 +63,8 @@ model:
       thinking: adaptive
       effort: medium
       price_usd_per_million: {input: 5.50, cached_input: 0.55, cache_write: 6.875, output: 27.50}   # list +10% (US routing)
+      fallback: bedrock/claude-opus-4-6-global  # when this route's daily token quota is used up (429 "Too many tokens
+                                                # per day"), calls move to the global route of the same model
     bedrock/claude-opus-4-6-global:           # the same model, global routing: its own daily token quota (17 Oct: the
       provider: bedrock_anthropic             # US route's ran out, this one answered); any AWS region may serve a call
       model: global.anthropic.claude-opus-4-6-v1
