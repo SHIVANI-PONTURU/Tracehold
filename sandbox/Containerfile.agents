@@ -1,0 +1,18 @@
+# TraceHold agent image (Phase 2 step 11): the one image the Tracer, Adjudicator and Verifier sandboxes run.
+# Python 3.13, the agents' packages pinned by requirements.lock.txt, and only the code the three workers import.
+# No keys, no .env, no database client: a sandbox reaches only its tool server path, the model route and Langfuse.
+# Built by deploy/sandboxes.sh from a staging folder (never the repository root, which holds IBM's files).
+FROM docker.io/library/python:3.13-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PYTHONPATH=/opt/tracehold
+
+COPY requirements.agents.txt requirements.lock.linux.txt /opt/build/
+RUN pip install -r /opt/build/requirements.agents.txt -c /opt/build/requirements.lock.linux.txt \
+ && rm -rf /opt/build
+
+COPY code/ /opt/tracehold/
+RUN python -m compileall -q /opt/tracehold \
+ && useradd --uid 1000 --user-group --create-home --shell /usr/sbin/nologin sandbox
+
+USER sandbox

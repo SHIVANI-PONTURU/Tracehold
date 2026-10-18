@@ -1,0 +1,69 @@
+# TraceHold overlay v1 settings (implementation plan: Phase 1 steps 10-11, Appendix C step 5).
+# The same seed and the same input files always give identical output files.
+seed: 20261015
+
+input:                          # paths are relative to this file
+  transactions: ../HI-Small_Trans.csv
+  patterns: ../HI-Small_Patterns.txt
+  accounts: ../HI-Small_accounts.csv
+
+output:
+  dir: output                   # data the graph loader may read (no labels)
+  labels_dir: ../eval/labels    # ground truth (ring devices) goes into the evaluation set
+
+time:
+  source_utc_offset_minutes: 330   # IBM times are read as IST wall-clock (UTC+05:30)
+
+currency:
+  usd_name: US Dollar
+  rupee_name: Rupee             # INR per US dollar comes from IBM's own implied Rupee rate
+  mismatch_tolerance: 0.01      # paid and received converting more than 1% apart = mismatch
+
+customers:
+  # customers are IBM's owners (Entity ID in HI-Small_accounts.csv)
+  # owner types treated as persons; every other type is a business
+  person_entity_types: [Individual, Sole Proprietorship]
+
+merchant:
+  top_share_by_distinct_payers: 0.01   # business customers in the top 1% by distinct payers
+  min_distinct_payers: 10
+
+account_age:                    # opening date = first transfer minus this age (never uses labels)
+  median_days: 1100
+  sigma: 1.0
+  min_days: 1
+  max_days: 7300
+
+opening_balance:                # opening balance = minimum feasible balance + buffer
+  buffer_median_multiple: 2.0   # buffer = typical payment x lognormal factor with this median
+  buffer_sigma: 1.0
+  buffer_max_multiple: 50
+  buffer_floor_rupees: 1000
+
+devices:
+  second_device_share: 0.3      # share of customers with a second device
+
+ips:
+  min_per_account: 1
+  max_per_account: 3
+
+households:                     # label-independent noise: groups of customers sharing a device and an IP
+  share_of_customers: 0.03
+  size_min: 2
+  size_max: 3
+  shared_phone_probability: 0.3
+
+injected_signals:               # the only label-derived part; set enabled: false for the Phase 4 ablation
+  enabled: true
+  ring_device_probability: 0.6  # chance each account in a laundering attempt uses the attempt's shared device
+  ring_phone_probability: 0.4   # chance each customer in a laundering attempt uses the attempt's shared phone
+  rate_tolerance: 0.05
+
+complaints:
+  report_delay_min_minutes: 30  # report time = last fraud transfer + a log-uniform delay in this range
+  report_delay_max_minutes: 1440
+
+banks:
+  # bank names come from HI-Small_accounts.csv; the demo banks are the IBM banks
+  # with the most accounts in laundering attempts
+  demo_count: 3

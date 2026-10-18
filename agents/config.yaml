@@ -1,0 +1,163 @@
+# TraceHold agent settings (Phase 2). Thresholds are set on development complaints only and documented in the
+# README; never tuned on test complaints. Secrets never go here: model keys come from .env (or, inside a
+# sandbox, are added by the gateway and never seen).
+
+tool_server_url: http://127.0.0.1:8000        # MCP paths /mcp/<agent>/ and the handoff API
+bank_id: "11"                                 # the UI's first bank
+bank_ids: ["11", "20", "12"]                  # the three demo banks; each has its own memory graph (memory_<bank>), and
+                                              # every worker serves all three (TRACEHOLD_BANK_IDS overrides)
+
+harness:                                      # Phase 3 step 3
+  lease_s: 900                                # a claim not renewed (every Step renews it) for this long is taken back
+
+lessons:                                      # Phase 3 steps 7-8 (memory/lessons.py)
+  initial_confidence: {human: 0.7, verifier_agent: 0.5}
+  confirm_step: 0.1                           # a later gate decision that agrees with the lesson
+  contradict_step: 0.2                        # ... that goes against it
+  deactivate_below: 0.3                       # below this the lesson stops being active
+  max_scope_identifiers: 12                   # devices and phones of the account kept in a lesson's scope
+
+model:
+  # The model all three agents use: one of `models` below. TRACEHOLD_MODEL_ID in .env overrides it.
+  # Default (16 Oct 2026, your choice): Claude Opus 4.6 on Amazon Bedrock, with the Bedrock API key in .env.
+  # Checked on 16 Oct with this AWS account: on Bedrock the Claude 4.7+ and 5.x models are refused ("not
+  # available for this account") but Claude Opus 4.6, Sonnet 4.6 and Haiku 4.5 answer; every paid GPT model is
+  # refused and gpt-oss-120b answers. Opus 5.5 is reachable through Claude Platform on AWS (aws/claude-opus-5-5)
+  # or the Anthropic API (claude-opus-5-5) if you set those up later.
+  # `python -m agents.check_model --all` tests every model below that has its key in .env.
+  id: bedrock/claude-opus-4-6
+  max_output_tokens: 16000                    # hard cap per call, thinking included
+  timeout_s: 300
+  max_retries: 6                              # rate limits (429), overload (529) and server errors, with backoff
+  models:
+    aws/claude-opus-5-5:                      # Claude Platform on AWS (needs the sign-up and its own key)
+      provider: anthropic_aws
+      model: claude-opus-5-5
+      region: us-east-2                       # your workspace's region (ANTHROPIC_AWS_REGION overrides)
+      workspace_env: ANTHROPIC_AWS_WORKSPACE_ID
+      api_key_env: ANTHROPIC_AWS_API_KEY      # a key from the AWS console's Claude Platform page; if empty, AWS
+                                              # access keys (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY) sign with SigV4
+      base_url_env: ANTHROPIC_AWS_BASE_URL    # optional override
+      thinking: adaptive
+      effort: medium
+      price_usd_per_million: {input: 4.00, cached_input: 0.20, cache_write: 5.00, output: 20.00}
+    aws/claude-sonnet-5-5:
+      provider: anthropic_aws
+      model: claude-sonnet-5-5
+      region: us-east-2
+      workspace_env: ANTHROPIC_AWS_WORKSPACE_ID
+      api_key_env: ANTHROPIC_AWS_API_KEY
+      base_url_env: ANTHROPIC_AWS_BASE_URL
+      thinking: adaptive
+      effort: medium
+      price_usd_per_million: {input: 2.00, cached_input: 0.10, cache_write: 2.50, output: 10.00}
+    bedrock/claude-opus-4-6:                  # Amazon Bedrock, US routing (default); answers on this account (16 Oct)
+      provider: bedrock_anthropic
+      model: us.anthropic.claude-opus-4-6-v1
+      base_url: https://bedrock-runtime.us-east-2.amazonaws.com
+      base_url_env: BEDROCK_RUNTIME_URL
+      region: us-east-2
+      api_key_env: BEDROCK_API_KEY            # the Bedrock API key; if empty, AWS access keys sign with SigV4
+      thinking: adaptive
+      effort: medium
+      price_usd_per_million: {input: 5.50, cached_input: 0.55, cache_write: 6.875, output: 27.50}   # list +10% (US routing)
+    bedrock/claude-opus-4-6-global:           # the same model, global routing: its own daily token quota (17 Oct: the
+      provider: bedrock_anthropic             # US route's ran out, this one answered); any AWS region may serve a call
+      model: global.anthropic.claude-opus-4-6-v1
+      base_url: https://bedrock-runtime.us-east-2.amazonaws.com
+      base_url_env: BEDROCK_RUNTIME_URL
+      region: us-east-2
+      api_key_env: BEDROCK_API_KEY
+      thinking: adaptive
+      effort: medium
+      price_usd_per_million: {input: 5.00, cached_input: 0.50, cache_write: 6.25, output: 25.00}    # list price
+    bedrock/claude-sonnet-4-6:
+      provider: bedrock_anthropic
+      model: us.anthropic.claude-sonnet-4-6
+      base_url: https://bedrock-runtime.us-east-2.amazonaws.com
+      base_url_env: BEDROCK_RUNTIME_URL
+      region: us-east-2
+      api_key_env: BEDROCK_API_KEY
+      thinking: adaptive
+      effort: medium
+      price_usd_per_million: {input: 3.30, cached_input: 0.33, cache_write: 4.125, output: 16.50}
+    claude-opus-5-5:                          # the Anthropic API (ANTHROPIC_API_KEY, billed by Anthropic)
+      provider: anthropic
+      base_url: https://api.anthropic.com
+      base_url_env: ANTHROPIC_BASE_URL
+      api_key_env: ANTHROPIC_API_KEY
+      thinking: adaptive
+      effort: medium
+      price_usd_per_million: {input: 4.00, cached_input: 0.20, cache_write: 5.00, output: 20.00}
+    claude-sonnet-5-5:
+      provider: anthropic
+      base_url: https://api.anthropic.com
+      base_url_env: ANTHROPIC_BASE_URL
+      api_key_env: ANTHROPIC_API_KEY
+      thinking: adaptive
+      effort: medium
+      price_usd_per_million: {input: 2.00, cached_input: 0.10, cache_write: 2.50, output: 10.00}
+    claude-haiku-5-5:
+      provider: anthropic
+      base_url: https://api.anthropic.com
+      base_url_env: ANTHROPIC_BASE_URL
+      api_key_env: ANTHROPIC_API_KEY
+      thinking: adaptive
+      effort: medium
+      price_usd_per_million: {input: 0.10, cached_input: 0.01, cache_write: 0.125, output: 0.50}  # prompts up to 100K tokens
+    openai.gpt-oss-120b:                      # Amazon Bedrock, Mantle endpoint, us-east-2 (fallback)
+      provider: openai_compatible
+      base_url: https://bedrock-mantle.us-east-2.api.aws/v1
+      base_url_env: BEDROCK_BASE_URL
+      api_key_env: BEDROCK_API_KEY
+      reasoning_effort: medium
+      price_usd_per_million: {input: 0.15, cached_input: 0.15, output: 0.60}
+    openai.gpt-oss-120b-1:0:                  # the same model on the bedrock-runtime endpoint
+      provider: openai_compatible
+      base_url: https://bedrock-runtime.us-east-2.amazonaws.com/openai/v1
+      base_url_env: BEDROCK_BASE_URL
+      api_key_env: BEDROCK_API_KEY
+      reasoning_effort: medium
+      price_usd_per_million: {input: 0.15, cached_input: 0.15, output: 0.60}
+    openai.gpt-5.4:                           # Bedrock; refused for this AWS account on 15 Oct
+      provider: openai_compatible
+      base_url: https://bedrock-mantle.us-east-2.api.aws/openai/v1
+      base_url_env: BEDROCK_BASE_URL
+      api_key_env: BEDROCK_API_KEY
+      reasoning_effort: low
+      price_usd_per_million: {input: 2.75, cached_input: 0.275, output: 16.50}
+
+budget:                                       # caps model spend (any route), checked before every call
+  per_run_usd: 3.00                           # one investigation, all three agents together (Opus 4.6 costs more)
+  total_usd: 70.00                            # everything recorded in the spend ledger; model calls stop here
+
+tracer:
+  min_traceable_paise: 100000                 # Rs 1,000: a branch carrying less taint is not followed
+  min_traceable_share_of_disputed: 0.01       # ... nor one carrying less than 1% of the disputed amount
+  max_layers: 12                              # cap on layer depth (cycles, runaway trails)
+  max_open_branches: 25                       # branches judged per layer, largest tainted amount first
+  absorbed_min_held_share: 0.5                # the model may stop a branch as "absorbed" only if the account still
+                                              # holds at least this share of the tainted money it received
+  absorbed_max_passed_on_share_of_disputed: 0.1   # ... and passed on less than this share of the disputed
+                                              # amount (test complaint CMP-0206: Rs 78 crore moved on)
+  recursion_limit: 80                         # LangGraph runaway guard: the run fails beyond it
+  timeout_s: 900                              # wall-clock runaway guard: the run fails beyond it
+
+adjudicator:
+  max_accounts: 40                            # accounts judged, largest tainted amount first
+  max_tool_calls: 8                           # optional extra lookups by the model
+  recursion_limit: 60
+  timeout_s: 900
+  likely_genuine_lien_floor_paise: 500000     # Rs 5,000: a likely-genuine account is liened only above this
+  lien_whatever_label_share: 0.5              # Phase 4: an account whose balance is at least this share stolen money
+                                              # is liened whatever its label (dev complaint CMP-0099)
+  lien_whatever_label_part_of_disputed: 0.25   # ... and so is one holding at least this share of the disputed amount
+                                              # (test sample 1: nine mules holding 47-90% of the loss were only reviewed)
+
+verifier:
+  gate_mode: placeholder                      # placeholder: the Verifier's verdict stands unless a human
+                                              # overrides it (demo default); confirm: a human confirms each lien
+  max_tool_calls: 6
+  recursion_limit: 60
+  timeout_s: 900
+  checkpoint_db: work/verifier_checkpoints.sqlite   # the HITL gate's LangGraph checkpointer

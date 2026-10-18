@@ -1,0 +1,26 @@
+# TraceHold at boot, part 2: the Tracer, Adjudicator and Verifier, each in its OpenShell sandbox (deploy/ec2.sh agents).
+# The OpenShell gateway's own unit starts only after default.target, so this unit hangs off the gateway
+# (WantedBy=openshell-gateway.service) and runs after it and after the stack. Wanting default.target here would make
+# the gateway wait for this unit while this unit waits for the gateway (an ordering cycle, seen 18 Oct).
+# Stopping it (for example at shutdown) deletes the sandboxes, so the next boot starts from clean records.
+[Unit]
+Description=TraceHold agents (three OpenShell sandboxes)
+After=openshell-gateway.service tracehold.service
+Wants=tracehold.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=%h/TraceHold
+# Wait up to a minute for the network, so the gateway address check can reach the instance metadata service
+# (the leading "-" lets the start go ahead even if the wait times out).
+ExecStartPre=-/usr/bin/timeout 60 /bin/sh -c 'until curl -s -o /dev/null -m 2 http://169.254.169.254/; do sleep 2; done'
+ExecStart=/usr/bin/bash deploy/ec2.sh agents
+ExecStop=/usr/bin/bash deploy/sandboxes.sh stop
+Restart=on-failure
+RestartSec=30
+TimeoutStartSec=900
+TimeoutStopSec=300
+
+[Install]
+WantedBy=openshell-gateway.service

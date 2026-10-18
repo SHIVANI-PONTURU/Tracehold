@@ -1,0 +1,20 @@
+# TraceHold's public entrance: HTTPS in front of the UI server (127.0.0.1:8501), on the EC2 server.
+# Install: sudo apt-get install -y caddy; sudo cp deploy/Caddyfile /etc/caddy/Caddyfile; sudo systemctl reload caddy
+# Two names, each with its own Let's Encrypt certificate: tracehold.duckdns.org (DuckDNS, pointed at the Elastic IP in
+# the DuckDNS account) and the sslip.io name of the Elastic IP (it resolves to the IP by itself), kept as a fallback in
+# case DuckDNS's name servers are slow. If the IP changes, change the sslip.io name and the bare IP below, and the IP in
+# DuckDNS. Only ports 80 and 443 are open to the internet (the security group); the tool server, the mock bank and
+# FalkorDB stay closed. The UI server forwards only an allowlist of handoff routes and adds its own browser hardening
+# headers.
+
+tracehold.duckdns.org, 32-188-216-174.sslip.io {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:8501
+	header Strict-Transport-Security "max-age=31536000"
+	header -Server
+}
+
+# The bare IP over plain HTTP sends visitors to the HTTPS name.
+http://32.188.216.174 {
+	redir https://tracehold.duckdns.org{uri} permanent
+}

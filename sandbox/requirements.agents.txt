@@ -1,0 +1,13 @@
+# The packages the three agent workers import (agents/worker.py and what it loads). Versions come from
+# requirements.lock.txt, used as a constraints file when the agent image is built (deploy/sandboxes.sh build).
+pydantic
+PyYAML
+python-dotenv
+httpx2
+mcp
+langgraph
+langgraph-checkpoint-sqlite
+langchain-core
+langchain
+langchain-openai
+langfuse

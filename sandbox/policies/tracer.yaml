@@ -1,0 +1,44 @@
+# TraceHold sandbox policy: the Tracer (Phase 2 step 11, plan Appendix I). OpenShell 0.1.x, policy schema v1.
+# Deny by default, enforced on every endpoint. The filesystem, Landlock and process sections are fixed when the
+# sandbox starts; the network section can be changed live, after review (openshell policy set).
+# The model route (Amazon Bedrock) and Langfuse are added by the attached providers (sandbox/profiles/), which
+# also put the keys into requests on the way out, so no key is ever inside the sandbox.
+# Everything else, including FalkorDB, the mock bank and the public internet, is blocked and logged.
+version: 1
+
+filesystem_policy:
+  include_workdir: true          # its own working folder (/sandbox) is the only read-write place
+  read_only: [/bin, /usr, /lib, /lib64, /etc, /proc, /dev/urandom, /opt/tracehold]
+  read_write: [/dev/null]
+
+landlock:
+  compatibility: hard_requirement
+
+process:
+  run_as_user: sandbox
+  run_as_group: sandbox
+
+network_policies:
+  tracehold_tool_server:
+    endpoints:
+      # The tool server on the gateway host: this agent's MCP path and the handoff API calls it makes.
+      - host: host.openshell.internal
+        port: 8000
+        protocol: rest
+        enforcement: enforce
+        # host.openshell.internal is a private, non-link-local address (10.255.255.254 under WSL), so the
+        # address must be allowed explicitly; the host name must still match.
+        allowed_ips: ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
+        rules:                   # claim complaints, submit trace handoffs
+          - allow: {method: POST, path: "/mcp/tracer"}
+          - allow: {method: POST, path: "/mcp/tracer/**"}
+          - allow: {method: GET, path: "/mcp/tracer/**"}
+          - allow: {method: POST, path: "/handoff/claim"}
+          - allow: {method: POST, path: "/handoff/submit"}
+          - allow: {method: POST, path: "/handoff/fail"}
+          - allow: {method: POST, path: "/handoff/step"}          # Phase 3: a Step after every node
+          - allow: {method: GET, path: "/handoff/read/**"}
+          - allow: {method: GET, path: "/handoff/spend"}
+          - allow: {method: POST, path: "/handoff/spend"}
+    binaries:
+      - path: /usr/local/bin/python3.13   # only the agent's Python interpreter may use this rule

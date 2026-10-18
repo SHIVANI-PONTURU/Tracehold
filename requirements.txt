@@ -1,0 +1,24 @@
+# TraceHold top-level Python packages. Install these once into a virtual environment, then freeze the
+# exact versions into requirements.lock.txt; a new machine (EC2 in Phase 5) installs from the lock file.
+falkordb>=1.7.1
+pandas>=2.2
+numpy>=1.26
+pyarrow>=17
+pandera>=0.20
+pyyaml>=6.0
+python-dotenv>=1.0
+pytest>=8.0
+altair>=5.0
+jupyter>=1.0
+# Phase 2: tools, mock bank, agents, tracing and UI
+mcp>=2.2                       # MCP Python SDK; its FastMCP server is called MCPServer since mcp 2.0
+fastapi                        # mock bank API (bank_api/)
+langgraph
+langgraph-checkpoint-sqlite    # the HITL gate's checkpointer
+langchain-openai               # Bedrock fallback models (OpenAI-compatible); Claude goes through httpx2
+httpx2                         # HTTP client: Claude (Anthropic Messages API), MCP client, mock bank calls
+langfuse
+streamlit
+langchain                      # needed by the Langfuse LangChain callback (Phase 2 tracing)
+# Phase 4: property tests for the taint engine
+hypothesis>=6.100

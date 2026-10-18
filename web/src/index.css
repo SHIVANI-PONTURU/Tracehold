@@ -1,0 +1,131 @@
+@import "tailwindcss";
+@import "@fontsource/ibm-plex-sans/400.css";
+@import "@fontsource/ibm-plex-sans/500.css";
+@import "@fontsource/ibm-plex-sans/600.css";
+@import "@fontsource/ibm-plex-sans/700.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+@import "@xyflow/react/dist/style.css";
+@import "driver.js/dist/driver.css";
+
+/* TraceHold: ledger paper and banker's green. Light mode only; no gradients; depth from three shadow levels. */
+@theme {
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", monospace;
+
+  --color-paper: #f2f6f1;
+  --color-paper-2: #e8f0e9;
+  --color-card: #ffffff;
+  --color-rule: #d8e5db;
+  --color-rule-2: #bcd1c2;
+  --color-ink: #13291c;
+  --color-ink-2: #2f4a3a;
+  --color-ink-3: #587464;
+  --color-ink-4: #8aa293;
+
+  --color-brand-50: #eff8f1;
+  --color-brand-100: #dcf0e2;
+  --color-brand-200: #bde2c9;
+  --color-brand-300: #8ecca4;
+  --color-brand-400: #56ad78;
+  --color-brand-500: #2f9a5d;
+  --color-brand-600: #1f7d48;
+  --color-brand-700: #18653a;
+  --color-brand-800: #144f2f;
+  --color-brand-900: #0e3a22;
+
+  /* states of an account on the trail and of a run (always shown with a label) */
+  --color-victim: #b8433a;
+  --color-victim-tint: #fbe8e5;
+  --color-approved: #1f7d48;
+  --color-approved-tint: #dcf0e2;
+  --color-proposed: #2c5f9e;
+  --color-proposed-tint: #e4edf8;
+  --color-rejected: #a85a0c;
+  --color-rejected-tint: #fbeedb;
+  --color-review: #8a6d00;
+  --color-review-tint: #f7efcc;
+  --color-none: #6f8476;
+  --color-none-tint: #edf2ee;
+  --color-danger: #b23a30;
+  --color-danger-tint: #fbe7e4;
+
+  /* chart series (dataviz validator: light, white surface, adjacent pairs pass) */
+  --color-s-blue: #2a78d6;
+  --color-s-orange: #eb6834;
+  --color-s-aqua: #1baf7a;
+  --color-s-yellow: #eda100;
+
+  --shadow-card: 0 1px 2px rgb(19 41 28 / 0.05), 0 1px 4px rgb(19 41 28 / 0.04);
+  --shadow-raised: 0 1px 2px rgb(19 41 28 / 0.06), 0 6px 18px rgb(19 41 28 / 0.08);
+  --shadow-float: 0 4px 10px rgb(19 41 28 / 0.10), 0 18px 44px rgb(19 41 28 / 0.16);
+  --shadow-press: inset 0 1px 2px rgb(19 41 28 / 0.12);
+
+  --radius-panel: 14px;
+  --radius-control: 8px;
+
+  --animate-pulse-soft: pulse-soft 1.6s ease-in-out infinite;
+  @keyframes pulse-soft {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.45; }
+  }
+}
+
+@layer base {
+  html { color-scheme: light; }
+  body {
+    @apply bg-paper font-sans text-ink-2 antialiased;
+    font-size: 14px;
+    line-height: 1.5;
+    font-feature-settings: "kern";
+  }
+  h1, h2, h3, h4 { @apply text-ink; }
+  :focus-visible { outline: 2px solid var(--color-brand-500); outline-offset: 2px; border-radius: 4px; }
+  ::selection { background: var(--color-brand-200); color: var(--color-ink); }
+  input, select, textarea, button { font: inherit; }
+}
+
+@layer utilities {
+  .num { font-variant-numeric: tabular-nums; }
+  .id { @apply font-mono text-[12.5px] tracking-tight; }
+  .scroll-thin { scrollbar-width: thin; scrollbar-color: var(--color-rule-2) transparent; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
+
+/* React Flow, quietly in the ledger palette */
+.react-flow__attribution { display: none; }
+.react-flow__controls { box-shadow: var(--shadow-raised); border-radius: 10px; overflow: hidden; }
+.react-flow__controls-button { background: #fff; border-bottom: 1px solid var(--color-rule); color: var(--color-ink-2); }
+.react-flow__controls-button:hover { background: var(--color-brand-50); }
+.react-flow__minimap { border-radius: 10px; box-shadow: var(--shadow-card); }
+
+/* driver.js tour, in the same palette */
+.driver-popover.th-tour {
+  background: #fff; color: var(--color-ink-2); border-radius: 14px; box-shadow: var(--shadow-float);
+  padding: 18px 18px 14px; max-width: 360px; font-family: var(--font-sans);
+}
+.driver-popover.th-tour .driver-popover-title { font-size: 16px; font-weight: 600; color: var(--color-ink); line-height: 1.3; }
+.driver-popover.th-tour .driver-popover-description { font-size: 13.5px; line-height: 1.55; color: var(--color-ink-2); margin-top: 6px; }
+.driver-popover.th-tour .driver-popover-progress-text { color: var(--color-ink-3); font-size: 12px; }
+.driver-popover.th-tour .driver-popover-footer button {
+  text-shadow: none; border-radius: 8px; border: 1px solid var(--color-rule-2); background: #fff; color: var(--color-ink);
+  padding: 6px 12px; font-size: 13px; font-weight: 500;
+}
+.driver-popover.th-tour .driver-popover-footer .driver-popover-next-btn {
+  background: var(--color-brand-600); border-color: var(--color-brand-600); color: #fff;
+}
+.driver-popover.th-tour .driver-popover-close-btn { color: var(--color-ink-3); }
+.driver-popover.th-tour .driver-popover-arrow-side-left.driver-popover-arrow { border-left-color: #fff; }
+.driver-popover.th-tour .driver-popover-arrow-side-right.driver-popover-arrow { border-right-color: #fff; }
+.driver-popover.th-tour .driver-popover-arrow-side-top.driver-popover-arrow { border-top-color: #fff; }
+.driver-popover.th-tour .driver-popover-arrow-side-bottom.driver-popover-arrow { border-bottom-color: #fff; }
+
+@keyframes node-in { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
+
+/* money moving along a transfer (the FalkorDB replay) */
+@keyframes dash-flow { to { stroke-dashoffset: -24; } }
+.edge-flow { stroke-dasharray: 6 6; animation: dash-flow 0.9s linear infinite; }

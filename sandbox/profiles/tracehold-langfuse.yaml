@@ -1,0 +1,29 @@
+# OpenShell provider profile: Langfuse tracing (plan Appendix I: "ingestion paths only").
+# The sandbox holds placeholders for both Langfuse keys; the SDK sends them as Basic auth, and OpenShell's
+# proxy decodes the header, puts the real keys in and re-encodes it, only for requests to this endpoint.
+# deploy/sandboxes.sh replaces the host below with the one in .env (LANGFUSE_HOST) before importing.
+id: tracehold-langfuse
+display_name: TraceHold tracing (Langfuse)
+description: Langfuse trace ingestion for the Tracer, Adjudicator and Verifier
+category: other                  # OpenShell 0.1.4 has no observability category
+credentials:
+  - name: public_key
+    env_vars: [LANGFUSE_PUBLIC_KEY]
+    required: true
+    auth_style: basic
+  - name: secret_key
+    env_vars: [LANGFUSE_SECRET_KEY]
+    required: true
+    auth_style: basic
+discovery:
+  credentials: [public_key, secret_key]
+endpoints:
+  - host: cloud.langfuse.com
+    port: 443
+    protocol: rest
+    enforcement: enforce
+    rules:                       # ingestion paths only (traces go to /api/public/otel/...)
+      - allow: {method: POST, path: "/api/public/**"}
+      - allow: {method: GET, path: "/api/public/**"}
+binaries:
+  - /usr/local/bin/python3.13

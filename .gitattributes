@@ -1,0 +1,7 @@
+# Normalise text files; keep the server scripts in Linux line endings even when cloned on Windows.
+* text=auto
+*.sh text eol=lf
+*.service text eol=lf
+deploy/Caddyfile text eol=lf
+*.png binary
+*.pdf binary

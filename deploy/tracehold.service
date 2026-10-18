@@ -1,0 +1,20 @@
+# TraceHold at boot, part 1: FalkorDB, the mock bank, the tool server and the UI server (deploy/ec2.sh stack).
+# Part 2, the three sandboxed agents, is tracehold-agents.service, so a problem there never takes the website down.
+# systemd user units for the ubuntu user, who has linger on, so they run without a login.
+# Install both with: bash deploy/ec2.sh enable-boot
+[Unit]
+Description=TraceHold stack (FalkorDB, mock bank, tool server, UI server)
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=%h/TraceHold
+ExecStart=/usr/bin/bash deploy/ec2.sh stack
+ExecStop=/usr/bin/bash deploy/wsl_stack.sh stop
+Restart=on-failure
+RestartSec=30
+TimeoutStartSec=900
+TimeoutStopSec=300
+
+[Install]
+WantedBy=default.target

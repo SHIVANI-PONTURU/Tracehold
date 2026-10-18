@@ -1,0 +1,24 @@
+# OpenShell provider profile: the agents' model route (Claude on Amazon Bedrock, us-east-2), plan step 12.
+# The sandbox holds only a placeholder for BEDROCK_API_KEY; OpenShell's proxy puts the real key into the
+# Authorization header of requests to this endpoint, and only for the agents' Python interpreter.
+id: tracehold-bedrock
+display_name: TraceHold model route (Amazon Bedrock)
+description: Claude on Amazon Bedrock (us-east-2) for the Tracer, Adjudicator and Verifier
+category: inference
+credentials:
+  - name: bedrock_api_key
+    env_vars: [BEDROCK_API_KEY]
+    required: true
+    auth_style: bearer
+    header_name: authorization
+discovery:
+  credentials: [bedrock_api_key]
+endpoints:
+  - host: bedrock-runtime.us-east-2.amazonaws.com
+    port: 443
+    protocol: rest
+    enforcement: enforce
+    rules:                       # only model calls: POST /model/<model id>/invoke
+      - allow: {method: POST, path: "/model/**"}
+binaries:
+  - /usr/local/bin/python3.13

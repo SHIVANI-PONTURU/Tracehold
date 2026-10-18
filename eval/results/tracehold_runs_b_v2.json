@@ -1,0 +1,223 @@
+{
+ "CMP-0075": {
+  "bank_id": "112064",
+  "investigation_id": "INV-0075-323d1d0b1427",
+  "started": 1792266548
+ },
+ "CMP-0082": {
+  "bank_id": "4",
+  "investigation_id": "INV-0082-eed391a6effb",
+  "started": 1792266548
+ },
+ "CMP-0084": {
+  "bank_id": "19329",
+  "investigation_id": "INV-0084-d292fdad8872",
+  "started": 1792266548
+ },
+ "CMP-0090": {
+  "bank_id": "1665",
+  "investigation_id": "INV-0090-15f53cae7afe",
+  "started": 1792266548
+ },
+ "CMP-0100": {
+  "bank_id": "119",
+  "investigation_id": "INV-0100-bbe10be13607",
+  "started": 1792266548
+ },
+ "CMP-0103": {
+  "bank_id": "119",
+  "investigation_id": "INV-0103-4a6096e2e14b",
+  "started": 1792270437,
+  "previous": [
+   "INV-0103-0304572d0e08"
+  ]
+ },
+ "CMP-0107": {
+  "bank_id": "1655",
+  "investigation_id": "INV-0107-7d97422f8252",
+  "started": 1792270203,
+  "previous": [
+   "INV-0107-6be52147004d"
+  ]
+ },
+ "CMP-0110": {
+  "bank_id": "119",
+  "investigation_id": "INV-0110-87074fa842bf",
+  "started": 1792266548
+ },
+ "CMP-0117": {
+  "bank_id": "22155",
+  "investigation_id": "INV-0117-d106841eb667",
+  "started": 1792266548
+ },
+ "CMP-0119": {
+  "bank_id": "223",
+  "investigation_id": "INV-0119-ae71030d768e",
+  "started": 1792266548
+ },
+ "CMP-0153": {
+  "bank_id": "26",
+  "investigation_id": "INV-0153-4bec39432df2",
+  "started": 1792266548
+ },
+ "CMP-0158": {
+  "bank_id": "148350",
+  "investigation_id": "INV-0158-afa6940e20d7",
+  "started": 1792266548
+ },
+ "CMP-0162": {
+  "bank_id": "119",
+  "investigation_id": "INV-0162-cdaca8ab8737",
+  "started": 1792266548
+ },
+ "CMP-0173": {
+  "bank_id": "118",
+  "investigation_id": "INV-0173-5cb9adb58d0f",
+  "started": 1792266548
+ },
+ "CMP-0175": {
+  "bank_id": "15231",
+  "investigation_id": "INV-0175-7656239b0a44",
+  "started": 1792266548
+ },
+ "CMP-0180": {
+  "bank_id": "223",
+  "investigation_id": "INV-0180-90dff5269d30",
+  "started": 1792266548
+ },
+ "CMP-0183": {
+  "bank_id": "150240",
+  "investigation_id": "INV-0183-d510b36b9f5d",
+  "started": 1792266548
+ },
+ "CMP-0191": {
+  "bank_id": "229620",
+  "investigation_id": "INV-0191-2d07b602183a",
+  "started": 1792266548
+ },
+ "CMP-0192": {
+  "bank_id": "9587",
+  "investigation_id": "INV-0192-1bfe1d09a0b9",
+  "started": 1792266548
+ },
+ "CMP-0199": {
+  "bank_id": "1299",
+  "investigation_id": "INV-0199-8868f56a2e5c",
+  "started": 1792266548
+ },
+ "CMP-0216": {
+  "bank_id": "121",
+  "investigation_id": "INV-0216-a18295d9f10a",
+  "started": 1792266548
+ },
+ "CMP-0217": {
+  "bank_id": "148350",
+  "investigation_id": "INV-0217-58cfce71e159",
+  "started": 1792266548
+ },
+ "CMP-0221": {
+  "bank_id": "5464",
+  "investigation_id": "INV-0221-13cc9ad118cc",
+  "started": 1792266548
+ },
+ "CMP-0224": {
+  "bank_id": "119",
+  "investigation_id": "INV-0224-5da3eb9e78b3",
+  "started": 1792266548
+ },
+ "CMP-0232": {
+  "bank_id": "1241",
+  "investigation_id": "INV-0232-3be2b7ee9566",
+  "started": 1792266548
+ },
+ "CMP-0249": {
+  "bank_id": "3",
+  "investigation_id": "INV-0249-51a200e577e9",
+  "started": 1792266548
+ },
+ "CMP-0263": {
+  "bank_id": "15231",
+  "investigation_id": "INV-0263-8975c45680a1",
+  "started": 1792266548
+ },
+ "CMP-0269": {
+  "bank_id": "23842",
+  "investigation_id": "INV-0269-4aa79cefc2ac",
+  "started": 1792266548
+ },
+ "CMP-0276": {
+  "bank_id": "119",
+  "investigation_id": "INV-0276-bf24db09924c",
+  "started": 1792266548
+ },
+ "CMP-0277": {
+  "bank_id": "222",
+  "investigation_id": "INV-0277-a22e1c4fed3f",
+  "started": 1792266548
+ },
+ "CMP-0282": {
+  "bank_id": "4242",
+  "investigation_id": "INV-0282-32602631dfc7",
+  "started": 1792266548
+ },
+ "CMP-0288": {
+  "bank_id": "13862",
+  "investigation_id": "INV-0288-71a498e37153",
+  "started": 1792266548
+ },
+ "CMP-0290": {
+  "bank_id": "134939",
+  "investigation_id": "INV-0290-553712ae265b",
+  "started": 1792266548
+ },
+ "CMP-0291": {
+  "bank_id": "23537",
+  "investigation_id": "INV-0291-e37103742ff2",
+  "started": 1792266548
+ },
+ "CMP-0307": {
+  "bank_id": "214749",
+  "investigation_id": "INV-0307-75133eb0dc17",
+  "started": 1792266548
+ },
+ "CMP-0323": {
+  "bank_id": "217",
+  "investigation_id": "INV-0323-71de0ffe45aa",
+  "started": 1792266548
+ },
+ "CMP-0330": {
+  "bank_id": "15231",
+  "investigation_id": "INV-0330-acdabad6bbfb",
+  "started": 1792266548
+ },
+ "CMP-0333": {
+  "bank_id": "19",
+  "investigation_id": "INV-0333-ae7cca15cba8",
+  "started": 1792266548
+ },
+ "CMP-0337": {
+  "bank_id": "1547",
+  "investigation_id": "INV-0337-4018ce1d0633",
+  "started": 1792270438,
+  "previous": [
+   "INV-0337-b5ad220ee520",
+   "INV-0337-a39edf5ded60"
+  ]
+ },
+ "CMP-0341": {
+  "bank_id": "1362",
+  "investigation_id": "INV-0341-6e35b6bcd224",
+  "started": 1792270203,
+  "previous": [
+   "INV-0341-8c0560fff055"
+  ]
+ },
+ "CMP-0362": {
+  "bank_id": "222",
+  "investigation_id": "INV-0362-ef114155a6ef",
+  "started": 1792270438,
+  "previous": [
+   "INV-0362-a8e6d46633ce"
+  ]
+ }
+}

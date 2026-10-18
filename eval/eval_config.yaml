@@ -1,0 +1,23 @@
+# TraceHold evaluation set settings (implementation plan: Phase 1 steps 9 and 11, Phase 4, Appendix C).
+# IBM file paths, the seed and the time zone are read from the overlay config in synthetic_dir.
+synthetic_dir: ../synthetic     # generator, overlay config, fx_rates.csv and output/
+labels_dir: labels              # ground truth: never loaded into the graph
+
+labels:
+  mule_share_threshold: 0.5     # mule if more than this share of outgoing value is laundering-labelled
+                                # (accounts with no outgoing transfers: share of incoming value)
+  sensitivity_thresholds: [0.3, 0.7]   # reported only, to show how many labels flip
+
+split:
+  dev_cutoff_days: 5            # complaints whose IBM attempt ends within the first N days are "dev"; the rest "test"
+
+trail:
+  max_depth: 20                 # cap on the longest chain of laundering-labelled transfers
+
+demo:                           # the two complaints for the memory demo (labels/demo_pair.csv)
+  min_depth: 4                  # complaint 1 is at least this many layers deep
+  max_disputed_rupees: 10000000 # both complaints dispute at most ₹1 crore
+
+depth_buckets:                  # by the longest chain along the trail
+  shallow_max: 3                # 1 to 3 layers
+  medium_max: 6                 # 4 to 6 layers; deeper is "deep"
