@@ -84,12 +84,14 @@ export function DotPlot({ rows, series, ariaLabel }: { rows: DotRow[]; series: D
   return (
     <div ref={ref} className="relative">
       <svg width={w} height={TOP + plotH + AXIS} role="img" aria-label={ariaLabel} className="block overflow-visible">
-        {ticks.map(t => {
+        {ticks.map((t, i) => {
           const tx = LEFT + ((Math.log10(t) - Math.log10(lo)) / span) * (w - LEFT - RIGHT)
+          // A label such as "₹1,00,000 Cr" needs about 64 px; when the gridlines are closer, label every other one.
+          const every = (w - LEFT - RIGHT) / Math.max(1, ticks.length - 1) < 64 ? 2 : 1
           return (
             <g key={t}>
               <line x1={tx} x2={tx} y1={TOP - 6} y2={TOP + plotH} stroke="var(--color-rule)" />
-              <text x={tx} y={TOP + plotH + 18} textAnchor="middle" fontSize={11.5} fill="var(--color-ink-3)">{rupeeTick(t)}</text>
+              {i % every === 0 && <text x={tx} y={TOP + plotH + 18} textAnchor="middle" fontSize={11.5} fill="var(--color-ink-3)">{rupeeTick(t)}</text>}
             </g>
           )
         })}
