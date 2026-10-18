@@ -125,10 +125,11 @@ TraceHold uses IBM's public synthetic anti-money-laundering data (about 5 millio
 
 ## Built with AI tools
 
-Claude Code (Anthropic's AI coding assistant) helped write the code and the documentation; the agents in the product run on Claude Opus 4.6.
+Claude Code (Anthropic's AI coding assistant) helped write the code. The agents in the product run on Claude Opus 4.6.
 
 ## More
 
 - [docs/QUERIES.md](docs/QUERIES.md): Every Cypher query and why it exists
 - [docs/SANDBOX.md](docs/SANDBOX.md): What each sandbox may reach
 - [docs/CONTRACT.md](docs/CONTRACT.md): The tools and handoffs
+- Read the Blog post at [TraceHold: Preventing Fraudsters from Escaping Justice](https://medium.com/@tracehold.1/tracehold-preventing-fraudsters-from-escaping-justice-7a03c50bc1eb)
